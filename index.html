@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GlassGuard: Verified Glass Plane Mapping for Robot Navigation</title>
+<link href="https://fonts.googleapis.com/css?family=Google+Sans:400,500,700|Noto+Sans:400,700" rel="stylesheet">
+<style>
+  :root{ --ink:#363636; --muted:#5b6470; --accent:#0b66c3; --border:#e3e8ee; }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:"Noto Sans","Segoe UI",Arial,sans-serif;color:var(--ink);
+       background:#fff;line-height:1.78;font-size:22px}
+  h1,h2,h3,.btn{font-family:"Google Sans","Noto Sans",Arial,sans-serif}
+  .wrap{max-width:1750px;margin:0 auto;padding:0 3vw;text-align:center}
+
+  /* sticky nav */
+  nav.top{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);
+          border-bottom:1px solid var(--border);display:flex;justify-content:center;gap:6px;padding:10px 8px}
+  nav.top a{color:var(--ink);text-decoration:none;font-size:1.02rem;padding:7px 16px;border-radius:18px;
+            font-family:"Google Sans","Noto Sans",Arial,sans-serif;transition:all .15s}
+  nav.top a:hover{background:#eef3f9;color:var(--accent)}
+
+  /* ── HERO with background image ── */
+  .hero{position:relative;min-height:82vh;display:flex;align-items:center;justify-content:center;
+        background:#04070c url("assets/hero.png") center/cover no-repeat;overflow:hidden}
+  .hero::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 180px 60px rgba(0,0,0,.55);pointer-events:none}
+  .hero::before{content:"";position:absolute;inset:0;
+        background:linear-gradient(180deg,rgba(2,5,10,.74) 0%,rgba(2,5,10,.44) 45%,rgba(2,5,10,.82) 100%)}
+  .hero .inner{position:relative;z-index:1;padding:70px 4vw;max-width:1300px;text-align:center}
+  .hero h1{font-size:clamp(2.6rem,4.6vw,4.1rem);font-weight:700;margin:0 0 22px;line-height:1.25;
+           letter-spacing:-.5px;color:#fff;text-shadow:0 2px 26px rgba(0,0,0,.7)}
+  .hero .authors{color:#dbe4ee;font-size:1.5rem;margin-bottom:8px}
+  .hero .venue{color:#9fadbd;font-size:1.2rem;font-style:italic}
+  .btnrow{margin-top:32px}
+  .btn{display:inline-block;margin:5px 8px;padding:12px 30px;border-radius:28px;
+       border:1px solid rgba(255,255,255,.35);background:rgba(20,22,26,.72);color:#fff;
+       text-decoration:none;font-size:1.15rem;transition:all .15s}
+  .btn:hover{background:rgba(255,255,255,.2);border-color:#fff}
+  .btn.dis{opacity:.4;pointer-events:none}
+  .scrollhint{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);color:#cfd8e3;
+              font-size:1.7rem;z-index:1;animation:bob 1.8s infinite;text-decoration:none}
+  @keyframes bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,8px)}}
+
+  /* ── sections ── */
+  section{padding:64px 0}
+  h2{font-size:2.7rem;font-weight:700;margin:0 0 8px;letter-spacing:-.4px;
+     display:flex;align-items:center;justify-content:center;gap:14px}
+  h2::after{content:none}
+  .h2bar{width:70px;height:4px;border-radius:2px;background:var(--accent);margin:0 auto 26px;opacity:.85}
+  h2 .emoji{font-size:2.3rem}
+  .h2sub{color:var(--muted);max-width:1550px;margin:0 auto 30px;font-size:1.28rem}
+  p{margin:12px auto;max-width:1500px}
+  hr.sep{border:none;border-top:1px solid var(--border);margin:0 auto;max-width:1500px}
+
+  .sublabel{display:inline-flex;align-items:center;gap:8px;font-family:"Google Sans","Noto Sans",Arial,sans-serif;
+            font-size:1.25rem;font-weight:700;color:var(--accent);background:#eef3f9;border-radius:20px;
+            padding:6px 22px;margin:26px 0 4px}
+  ul.contrib{margin-top:6px}
+  /* contributions bullets */
+  ul.contrib{display:block;text-align:left;max-width:1150px;margin:10px auto 0;padding-left:1.3em}
+  ul.contrib li{margin-bottom:22px;font-weight:700;font-size:1.24rem}
+  ul.contrib li:last-child{margin-bottom:0}
+
+  /* figures */
+  figure{margin:30px 0 0 calc(50% - 44vw);width:88vw;max-width:88vw}
+  figure img{width:100%;border-radius:10px;background:#fff}
+  figcaption{color:var(--muted);font-size:1.05rem;margin-top:10px}
+
+  .placeholder{background:#f6f8fa;border:2px dashed var(--border);border-radius:14px;
+               padding:95px 20px;color:var(--muted);font-size:1.3rem;max-width:1250px;margin:0 auto}
+
+  /* video grids: break out of the text column to near full viewport width */
+  .scene{margin:54px 0 0 calc(50% - 33vw);width:66vw;max-width:66vw}
+  .scene h3{font-size:2.4rem;margin:0 0 4px}
+  .scene .sub{color:var(--muted);font-size:1.6rem;margin-bottom:16px}
+  .scenegrid{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+  @media(max-width:900px){.scenegrid{grid-template-columns:1fr}}
+  .vidcard{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;
+           box-shadow:0 6px 22px rgba(15,35,60,.10);transition:transform .15s, box-shadow .15s}
+  .vidcard:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(15,35,60,.16)}
+  .vidcard .vframe{padding:8px;background:linear-gradient(145deg,#eef3f9,#dfe7f0)}
+  .vidcard video{width:100%;display:block;background:#000;aspect-ratio:16/9;border-radius:8px;
+                 border:1px solid rgba(15,35,60,.18)}
+  .vidcard .cap{padding:14px 20px;font-size:1.45rem;color:var(--muted);text-align:left}
+  .vidcard .cap b{color:var(--ink)}
+  .tag{display:inline-block;font-size:.9rem;padding:2px 12px;border-radius:12px;margin-left:8px;
+       background:#e8f0fb;color:var(--accent);vertical-align:4px;font-weight:400}
+
+
+  /* results tables */
+  .restable{border-collapse:collapse;margin:22px auto;font-size:1.05rem;background:#fff;
+            box-shadow:0 3px 14px rgba(15,35,60,.07);border-radius:10px;overflow:hidden}
+  .restable th,.restable td{padding:10px 18px;border-bottom:1px solid var(--border);text-align:center}
+  .restable thead th{background:#eef3f9;font-weight:700;white-space:nowrap}
+  .restable td:first-child,.restable th:first-child{text-align:left;font-weight:700}
+  .restable tr.ours{background:#f4f9ff}
+  .restable td.best{font-weight:800;color:var(--accent)}
+  .restable tbody tr:last-child td{border-bottom:none}
+  .meantable{font-size:1.15rem}
+  .pershead{font-size:1.5rem;font-weight:700;margin:44px 0 8px;font-family:"Google Sans","Noto Sans",Arial,sans-serif}
+  .scdet{max-width:1250px;margin:10px auto;text-align:center;background:#f6f8fa;border:1px solid var(--border);
+         border-radius:10px;padding:6px 18px}
+  .scdet summary{cursor:pointer;font-size:1.2rem;font-weight:700;padding:10px 4px;text-align:left}
+  .scdet .restable{margin:8px auto 16px}
+  .resnote{color:var(--muted);font-size:1rem;max-width:1400px;margin:6px auto 0}
+
+  .legend{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:8px;
+          color:var(--muted);font-size:1rem}
+  .legend .chip{display:inline-flex;align-items:center;gap:6px}
+  .legend .sw{width:14px;height:14px;border-radius:3px;display:inline-block}
+  .qualstrip{width:100%;margin-top:20px;border-radius:12px;border:1px solid var(--border);
+             background:#fff;box-shadow:0 3px 14px rgba(15,35,60,.07)}
+  .qualnote{color:var(--muted);font-size:1.05rem;margin-top:6px;text-align:center}
+
+  .man{max-width:1250px;margin:0 auto;text-align:left}
+  .man h3{font-size:1.5rem;margin:34px 0 10px;text-align:center}
+  .mantable{border-collapse:collapse;margin:14px auto;font-size:1.05rem;background:#fff;
+            box-shadow:0 3px 14px rgba(15,35,60,.07);border-radius:10px;overflow:hidden}
+  .mantable th,.mantable td{padding:9px 18px;border-bottom:1px solid var(--border);text-align:center}
+  .mantable thead th{background:#eef3f9;font-weight:700}
+  .mantable td:first-child{text-align:left;font-weight:700}
+  .mantable tbody tr:last-child td{border-bottom:none}
+  .mantable code{background:#f0f3f7;border-radius:5px;padding:1px 7px;font-size:.95em}
+  .hp{width:100%;max-width:1250px;margin:8px auto;border-collapse:collapse;font-size:1.02rem;background:#fff;
+      box-shadow:0 3px 14px rgba(15,35,60,.07);border-radius:10px;overflow:hidden}
+  .hp th,.hp td{padding:9px 16px;border-bottom:1px solid var(--border);text-align:left}
+  .hp thead th{background:#eef3f9}
+  .hp td:first-child{white-space:nowrap}
+  .hp code{background:#f0f3f7;border-radius:5px;padding:1px 7px;font-size:.95em}
+
+  footer{padding:44px 0 64px;color:var(--muted);font-size:1.05rem;text-align:center;
+         border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <a href="#problem">Contributions</a>
+  <a href="#method">Method</a>
+  <a href="#results">Results</a>
+  <a href="#runs">Real-World Runs</a>
+  <a href="#baselines">Baselines</a>
+  <a href="#manual">Manual</a>
+</nav>
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="inner">
+    <h1>GlassGuard: Verified Glass Plane Mapping for Robot Navigation</h1>
+    <div class="authors">Anonymous Author(s)</div>
+    <div class="venue">Under review &mdash; identities withheld</div>
+    <div class="btnrow">
+      <a class="btn dis" href="#">📄 Paper (soon)</a>
+      <a class="btn" href="#expl-video">🎬 Video</a>
+      <a class="btn" href="#runs">🤖 Real-World Runs</a>
+      <a class="btn dis" href="#">💻 Code (soon)</a>
+    </div>
+  </div>
+  <a class="scrollhint" href="#problem">▾</a>
+</div>
+
+<!-- ── PROBLEM & CONTRIBUTIONS ── -->
+<section id="problem">
+  <div class="wrap">
+    <h2><span class="emoji">💡</span>Problem &amp; Contributions</h2>
+    <div class="h2bar"></div>
+    <div style="text-align:left;max-width:1150px;margin:0 auto">
+      <div class="sublabel">🚫 Problem</div>
+      <ul class="contrib">
+        <li><b>Glass creates two mapping failures:</b> missed panes leave dangerous gaps, while
+          misplaced reconstructions create phantom walls that block valid paths. Reliable navigation
+          needs both glass coverage <em>and</em> clean free space.</li>
+      </ul>
+      <div class="sublabel">✅ Contributions</div>
+      <ul class="contrib">
+        <li><b>Geometry verifies placement.</b> GlassGuard constructs metric plane hypotheses from
+          structural LiDAR cues, then cross-checks their orientation using depth-free image geometry
+          and bounds their extent using the glass silhouette.</li>
+        <li><b>The map remains revisable.</b> Multi-view reprojection and floor-consistency checks
+          refine or remove hypotheses contradicted by later observations, keeping the planner&rsquo;s
+          glass map up to date.</li>
+        <li><b>Building-scale evaluation.</b> Across nine scenes in six environments and 2.1&nbsp;km of
+          autonomous travel, GlassGuard achieves <b>82% total coverage versus at most 61% for the
+          baselines</b> under identical pinhole inputs, with <b>5&ndash;17&times; fewer concurrent
+          false voxels per frame</b>. The 360&deg; variant reaches <b>85% total coverage</b> and
+          detects <b>47.6% of eligible glass voxels while still at least 10&nbsp;m away</b>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<hr class="sep">
+
+<!-- ── METHOD ── -->
+<section id="method">
+  <div class="wrap">
+    <h2><span class="emoji">⚙️</span>Method</h2>
+    <div class="h2bar"></div>
+    <p class="h2sub">Candidate glass is segmented in RGB; sparse LiDAR structure around the mask anchors
+    a metric plane hypothesis; depth-free projective geometry verifies it before acceptance; the global
+    map keeps every accepted plane revocable, and the planner consumes verified occupancy only.</p>
+    <figure>
+      <img src="assets/pipeline_overview.png" alt="pipeline overview">
+    </figure>
+  </div>
+</section>
+
+<hr class="sep">
+
+<!-- ── EXPLANATION VIDEO ── -->
+<section id="expl-video">
+  <div class="wrap">
+    <h2><span class="emoji">🎬</span>Explanation Video</h2>
+    <div class="h2bar"></div>
+    <div class="placeholder">Narrated method &amp; results video — coming soon.</div>
+  </div>
+</section>
+
+<hr class="sep">
+
+<!-- ── RESULTS ── -->
+<section id="results">
+  <div class="wrap">
+    <h2><span class="emoji">📊</span>Benchmark Results</h2>
+    <div class="h2bar"></div>
+    <p class="h2sub">Occupancy-level comparison at 1.0&nbsp;m voxels over the nine benchmark scenes.
+    Coverage: percentage of ground-truth glass voxels mapped by the time the robot was still that
+    distance away ("by d"), and ever mapped ("Ever" — for pinhole methods, over the glass that ever
+    visibly entered their frustum). Spill: distinct false voxels accumulated over the run (air / ground), the mean number
+    present concurrently per inference frame, and the median distance from false voxels to the
+    nearest true pane. Best per column in <b style="color:var(--accent)">blue</b>.</p>
+<table class="restable meantable"><thead><tr><th>Method</th><th>by 10 m</th><th>by 8 m</th><th>by 5 m</th><th>Ever</th><th>Air</th><th>Ground</th><th>Per frame</th><th>Med. dist</th></tr></thead><tbody>
+<tr><td>MonoGlass3D</td><td>11.8</td><td>18.6</td><td>34.6</td><td>61.0</td><td>1564</td><td>490</td><td>290.2</td><td>4.2 m</td></tr>
+<tr><td>GlassRecon</td><td>16.6</td><td>21.0</td><td>28.0</td><td>44.4</td><td>408</td><td>150</td><td>85.4</td><td>3.4 m</td></tr>
+<tr class="ours"><td>GG-pin (ours)</td><td>32.6</td><td>54.2</td><td>68.8</td><td>82.1</td><td class=best>164</td><td>94</td><td>16.7</td><td>3.1 m</td></tr>
+<tr class="ours"><td>GG-360 (ours)</td><td class=best>47.6</td><td class=best>58.0</td><td class=best>71.4</td><td class=best>85.2</td><td>171</td><td class=best>55</td><td class=best>15.3</td><td class=best>3.0 m</td></tr>
+</tbody></table>
+<div class='pershead'>Per-scene results</div>
+<details class="scdet"><summary>Gates 5th Floor</summary><table class="restable "><thead><tr><th>Method</th><th>by 10 m</th><th>by 8 m</th><th>by 5 m</th><th>Ever</th><th>Air</th><th>Ground</th><th>Per frame</th><th>Med. dist</th></tr></thead><tbody>
+<tr><td>MonoGlass3D</td><td>5.2</td><td>10.8</td><td>37.6</td><td>70.4</td><td>1617</td><td>537</td><td>271.6</td><td>2.9 m</td></tr>
+<tr><td>GlassRecon</td><td>21.7</td><td>22.8</td><td>33.6</td><td>61.7</td><td class=best>111</td><td class=best>46</td><td>19.1</td><td class=best>1.3 m</td></tr>
+<tr class="ours"><td>GG-pin (ours)</td><td>22.4</td><td>47.1</td><td>72.7</td><td>89.8</td><td>237</td><td>149</td><td>24.7</td><td>2.9 m</td></tr>
+<tr class="ours"><td>GG-360 (ours)</td><td class=best>45.0</td><td class=best>59.7</td><td class=best>74.3</td><td class=best>89.9</td><td>222</td><td>107</td><td class=best>16.8</td><td>2.4 m</td></tr>
+</tbody></table></details>
+<details class="scdet"><summary>Gates 4th Floor</summary><table class="restable "><thead><tr><th>Method</th><th>by 10 m</th><th>by 8 m</th><th>by 5 m</th><th>Ever</th><th>Air</th><th>Ground</th><th>Per frame</th><th>Med. dist</th></tr></thead><tbody>
+<tr><td>MonoGlass3D</td><td>10.7</td><td>21.8</td><td>40.4</td><td>79.6</td><td>1713</td><td>494</td><td>159.8</td><td>2.7 m</td></tr>
+<tr><td>GlassRecon</td><td>14.1</td><td>20.8</td><td>33.8</td><td>57.3</td><td>176</td><td>33</td><td>17.7</td><td>2.1 m</td></tr>
+<tr class="ours"><td>GG-pin (ours)</td><td>23.4</td><td>48.5</td><td>73.5</td><td>87.2</td><td class=best>155</td><td>43</td><td class=best>7.7</td><td>1.5 m</td></tr>
+<tr class="ours"><td>GG-360 (ours)</td><td class=best>62.4</td><td class=best>63.1</td><td class=best>77.0</td><td class=best>91.9</td><td>180</td><td class=best>11</td><td>10.0</td><td class=best>1.5 m</td></tr>
+</tbody></table></details>
+<details class="scdet"><summary>Office</summary><table class="restable "><thead><tr><th>Method</th><th>by 10 m</th><th>by 8 m</th><th>by 5 m</th><th>Ever</th><th>Air</th><th>Ground</th><th>Per frame</th><th>Med. dist</th></tr></thead><tbody>
+<tr><td>MonoGlass3D</td><td>11.4</td><td>31.2</td><td>45.1</td><td>73.6</td><td>852</td><td>830</td><td>279.4</td><td>3.4 m</td></tr>
+<tr><td>GlassRecon</td><td>9.1</td><td>9.1</td><td>12.8</td><td>30.1</td><td>253</td><td>369</td><td>113.9</td><td>3.1 m</td></tr>
+<tr class="ours"><td>GG-pin (ours)</td><td>22.7</td><td class=best>51.9</td><td class=best>73.7</td><td>87.0</td><td>168</td><td>175</td><td>14.0</td><td>3.6 m</td></tr>
+<tr class="ours"><td>GG-360 (ours)</td><td class=best>39.6</td><td>45.6</td><td>64.6</td><td class=best>92.0</td><td class=best>56</td><td class=best>125</td><td class=best>11.1</td><td class=best>2.4 m</td></tr>
+</tbody></table></details>
+<details class="scdet"><summary>School Zone</summary><table class="restable "><thead><tr><th>Method</th><th>by 10 m</th><th>by 8 m</th><th>by 5 m</th><th>Ever</th><th>Air</th><th>Ground</th><th>Per frame</th><th>Med. dist</th></tr></thead><tbody>
+<tr><td>MonoGlass3D</td><td>22.3</td><td>31.2</td><td>51.5</td><td>64.5</td><td>1549</td><td>527</td><td>407.9</td><td>3.3 m</td></tr>
+<tr><td>GlassRecon</td><td>8.4</td><td>20.2</td><td>29.4</td><td>42.2</td><td>294</td><td>272</td><td>118.4</td><td>2.3 m</td></tr>
+<tr class="ours"><td>GG-pin (ours)</td><td>25.7</td><td>57.1</td><td>66.4</td><td>76.3</td><td>73</td><td>49</td><td>7.1</td><td class=best>1.6 m</td></tr>
+<tr class="ours"><td>GG-360 (ours)</td><td class=best>59.2</td><td class=best>66.4</td><td class=best>72.0</td><td class=best>77.2</td><td class=best>56</td><td class=best>26</td><td class=best>5.5</td><td>3.2 m</td></tr>
+</tbody></table></details>
+<details class="scdet"><summary>School Outside</summary><table class="restable "><thead><tr><th>Method</th><th>by 10 m</th><th>by 8 m</th><th>by 5 m</th><th>Ever</th><th>Air</th><th>Ground</th><th>Per frame</th><th>Med. dist</th></tr></thead><tbody>
+<tr><td>MonoGlass3D</td><td>33.3</td><td>35.7</td><td>42.0</td><td>77.2</td><td>1939</td><td>461</td><td>300.4</td><td>10.9 m</td></tr>
+<tr><td>GlassRecon</td><td>18.5</td><td>23.8</td><td>28.0</td><td>46.7</td><td>164</td><td>94</td><td>36.3</td><td class=best>6.1 m</td></tr>
+<tr class="ours"><td>GG-pin (ours)</td><td class=best>70.4</td><td class=best>64.3</td><td class=best>70.0</td><td class=best>93.5</td><td>147</td><td>29</td><td>12.2</td><td>10.9 m</td></tr>
+<tr class="ours"><td>GG-360 (ours)</td><td>25.6</td><td>40.3</td><td>59.4</td><td>77.9</td><td class=best>106</td><td class=best>18</td><td class=best>4.9</td><td>10.5 m</td></tr>
+</tbody></table></details>
+<details class="scdet"><summary>Tepper 2nd Floor</summary><table class="restable "><thead><tr><th>Method</th><th>by 10 m</th><th>by 8 m</th><th>by 5 m</th><th>Ever</th><th>Air</th><th>Ground</th><th>Per frame</th><th>Med. dist</th></tr></thead><tbody>
+<tr><td>MonoGlass3D</td><td>5.6</td><td>6.5</td><td>16.6</td><td>48.1</td><td>1331</td><td>559</td><td>336.9</td><td>3.5 m</td></tr>
+<tr><td>GlassRecon</td><td>3.2</td><td>3.3</td><td>5.1</td><td>14.3</td><td>196</td><td class=best>54</td><td>62.3</td><td>3.9 m</td></tr>
+<tr class="ours"><td>GG-pin (ours)</td><td>19.3</td><td class=best>50.5</td><td>72.2</td><td>87.2</td><td class=best>133</td><td>84</td><td class=best>21.6</td><td>2.5 m</td></tr>
+<tr class="ours"><td>GG-360 (ours)</td><td class=best>24.7</td><td>50.2</td><td class=best>78.4</td><td class=best>94.2</td><td>200</td><td>73</td><td>27.9</td><td class=best>1.8 m</td></tr>
+</tbody></table></details>
+<details class="scdet"><summary>Tepper Inside</summary><table class="restable "><thead><tr><th>Method</th><th>by 10 m</th><th>by 8 m</th><th>by 5 m</th><th>Ever</th><th>Air</th><th>Ground</th><th>Per frame</th><th>Med. dist</th></tr></thead><tbody>
+<tr><td>MonoGlass3D</td><td>5.8</td><td>8.7</td><td>26.7</td><td>47.0</td><td>1812</td><td>71</td><td>299.2</td><td>3.9 m</td></tr>
+<tr><td>GlassRecon</td><td>19.8</td><td>20.6</td><td>22.3</td><td>31.6</td><td>1010</td><td>17</td><td>165.2</td><td>3.7 m</td></tr>
+<tr class="ours"><td>GG-pin (ours)</td><td>23.0</td><td>44.7</td><td>51.3</td><td>58.5</td><td class=best>246</td><td>71</td><td class=best>29.9</td><td>2.0 m</td></tr>
+<tr class="ours"><td>GG-360 (ours)</td><td class=best>50.2</td><td class=best>60.7</td><td class=best>68.2</td><td class=best>78.7</td><td>317</td><td class=best>14</td><td>30.3</td><td class=best>1.9 m</td></tr>
+</tbody></table></details>
+<details class="scdet"><summary>Tepper Hall</summary><table class="restable "><thead><tr><th>Method</th><th>by 10 m</th><th>by 8 m</th><th>by 5 m</th><th>Ever</th><th>Air</th><th>Ground</th><th>Per frame</th><th>Med. dist</th></tr></thead><tbody>
+<tr><td>MonoGlass3D</td><td>7.7</td><td>11.8</td><td>25.0</td><td>44.6</td><td>2427</td><td>513</td><td>336.0</td><td>3.5 m</td></tr>
+<tr><td>GlassRecon</td><td>12.2</td><td>17.3</td><td>21.8</td><td>37.6</td><td>980</td><td>368</td><td>138.3</td><td>2.8 m</td></tr>
+<tr class="ours"><td>GG-pin (ours)</td><td>45.8</td><td>51.7</td><td>56.9</td><td>70.2</td><td class=best>192</td><td>138</td><td>12.1</td><td>1.5 m</td></tr>
+<tr class="ours"><td>GG-360 (ours)</td><td class=best>53.8</td><td class=best>59.1</td><td class=best>66.7</td><td class=best>75.0</td><td>291</td><td class=best>60</td><td class=best>11.8</td><td class=best>1.4 m</td></tr>
+</tbody></table></details>
+<details class="scdet"><summary>Gates Outside (Night)</summary><table class="restable "><thead><tr><th>Method</th><th>by 10 m</th><th>by 8 m</th><th>by 5 m</th><th>Ever</th><th>Air</th><th>Ground</th><th>Per frame</th><th>Med. dist</th></tr></thead><tbody>
+<tr><td>MonoGlass3D</td><td>3.9</td><td>9.4</td><td>26.5</td><td>44.3</td><td>835</td><td>415</td><td>221.0</td><td>3.5 m</td></tr>
+<tr><td>GlassRecon</td><td>42.7</td><td>51.5</td><td>65.3</td><td>78.4</td><td>486</td><td>100</td><td>97.1</td><td>4.8 m</td></tr>
+<tr class="ours"><td>GG-pin (ours)</td><td>40.9</td><td>72.2</td><td class=best>82.5</td><td>89.6</td><td>127</td><td>106</td><td>21.5</td><td class=best>1.8 m</td></tr>
+<tr class="ours"><td>GG-360 (ours)</td><td class=best>67.9</td><td class=best>77.1</td><td>81.9</td><td class=best>89.7</td><td class=best>113</td><td class=best>63</td><td class=best>19.0</td><td>1.8 m</td></tr>
+</tbody></table></details>
+  </div>
+</section>
+
+<hr class="sep">
+
+<!-- ── PROTECTION MAPS ── -->
+<section id="protection">
+  <div class="wrap">
+    <h2><span class="emoji">🛡️</span>Per-Voxel Protection Maps</h2>
+    <div class="h2bar"></div>
+    <p style="max-width:900px;margin:0 auto 14px auto">The benchmark tables above measure <b>mapping coverage</b> --
+    whether each glass surface is ever correctly reconstructed. Equally important for navigation is <b>live protection</b>:
+    whether the pane is present in the map <em>at the moment the robot is close enough to hit it</em>. We use a 5&nbsp;m
+    horizon because that is the range where an undetected pane becomes a collision risk for local planning.
+    Below, every ground-truth glass voxel is colored by how often the <b>live published map</b> protected it while the
+    robot was within 5&nbsp;m and the voxel was line-of-sight visible (and in-frustum for the pinhole camera):
+    <b style="color:#2eae4e">green</b>&nbsp;= held whenever needed, <b style="color:#e2a220">yellow/orange</b>&nbsp;= intermittent,
+    <b style="color:#d43a3a">red</b>&nbsp;= chronically missing, gray&nbsp;= the robot never came within 5&nbsp;m of this voxel
+    (never demanded). Black line: robot trajectory.</p>
+      <details class="scdet"><summary>Gates 4th Floor</summary>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:10px">
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/gates_4th_gg360_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-360</figcaption></figure>
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/gates_4th_ggpin_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-pin</figcaption></figure>
+        </div>
+      </details>
+      <details class="scdet"><summary>Gates 5th Floor</summary>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:10px">
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/gates_5th_gg360_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-360</figcaption></figure>
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/gates_5th_ggpin_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-pin</figcaption></figure>
+        </div>
+      </details>
+      <details class="scdet"><summary>Gates Outside (Night)</summary>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:10px">
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/gates_night_gg360_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-360</figcaption></figure>
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/gates_night_ggpin_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-pin</figcaption></figure>
+        </div>
+      </details>
+      <details class="scdet"><summary>Office</summary>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:10px">
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/office1_gg360_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-360</figcaption></figure>
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/office1_ggpin_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-pin</figcaption></figure>
+        </div>
+      </details>
+      <details class="scdet"><summary>School Outside</summary>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:10px">
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/school_outside1_gg360_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-360</figcaption></figure>
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/school_outside1_ggpin_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-pin</figcaption></figure>
+        </div>
+      </details>
+      <details class="scdet"><summary>School Zone</summary>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:10px">
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/school_zone1_gg360_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-360</figcaption></figure>
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/school_zone1_ggpin_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-pin</figcaption></figure>
+        </div>
+      </details>
+      <details class="scdet"><summary>Tepper 2nd Floor</summary>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:10px">
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/tepper_2nd_gg360_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-360</figcaption></figure>
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/tepper_2nd_ggpin_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-pin</figcaption></figure>
+        </div>
+      </details>
+      <details class="scdet"><summary>Tepper Hall</summary>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:10px">
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/tepper_hall_gg360_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-360</figcaption></figure>
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/tepper_hall_ggpin_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-pin</figcaption></figure>
+        </div>
+      </details>
+      <details class="scdet"><summary>Tepper Inside</summary>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:10px">
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/tepper_inside_gg360_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-360</figcaption></figure>
+          <figure style="margin:0;max-width:47%"><img src="assets/protection/tepper_inside_ggpin_protection.png" style="width:100%;border-radius:8px" loading="lazy"><figcaption style="text-align:center;font-size:0.95em;color:#555">GG-pin</figcaption></figure>
+        </div>
+      </details>
+  </div>
+</section>
+
+<hr class="sep">
+
+<!-- ── REAL-WORLD RUNS ── -->
+<section id="runs">
+  <div class="wrap">
+    <h2><span class="emoji">🤖</span>Real-World Runs</h2>
+    <div class="h2bar"></div>
+    <p class="h2sub">Sample recordings of the full system running live on the robot — spanning indoor and
+    outdoor environments, day and night, buildings of different scale, and glass styles from office
+    partitions to multi-storey atrium facades. GG-360 uses the full panorama; GG-pin is restricted to
+    a single pinhole view + sparse LiDAR — the same inputs the baselines consume.</p>
+
+    <div class="scene">
+      <h3>Gates 5th Floor</h3>
+      <div class="sub">Glass-walled offices and long corridors.</div>
+      <div class="scenegrid">
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/gates5_360.jpg" src="videos/gates5_360.mp4"></video></div>
+          <div class="cap"><b>GG-360</b></div></div>
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/gates5_pinhole.jpg" src="videos/gates5_pinhole.mp4"></video></div>
+          <div class="cap"><b>GG-pin</b></div></div>
+      </div>
+      <img class="qualstrip" src="assets/qual/v3_strip_gates_5th.png" alt="top-down occupancy comparison">
+      <div class="qualnote">Top-down occupancy vs. ground truth</div>
+      <div class="legend"><span class="chip"><span class="sw" style="background:#26bf4d"></span>detected</span><span class="chip"><span class="sw" style="background:#9e3dd1"></span>missed</span><span class="chip"><span class="sw" style="background:#eb2828"></span>misplaced</span><span class="chip"><span class="sw" style="background:#222"></span>robot path</span></div>
+    </div>
+
+    <div class="scene">
+      <h3>Gates 4th Floor</h3>
+      <div class="sub">Dense interior glass; the scene with the most annotated panes (60).</div>
+      <div class="scenegrid">
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/gate4_360.jpg" src="videos/gate4_360.mp4"></video></div>
+          <div class="cap"><b>GG-360</b></div></div>
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/gate4_pinhole.jpg" src="videos/gate4_pinhole.mp4"></video></div>
+          <div class="cap"><b>GG-pin</b></div></div>
+      </div>
+      <img class="qualstrip" src="assets/qual/v3_strip_gates_4th.png" alt="top-down occupancy comparison">
+      <div class="qualnote">Top-down occupancy vs. ground truth</div>
+      <div class="legend"><span class="chip"><span class="sw" style="background:#26bf4d"></span>detected</span><span class="chip"><span class="sw" style="background:#9e3dd1"></span>missed</span><span class="chip"><span class="sw" style="background:#eb2828"></span>misplaced</span><span class="chip"><span class="sw" style="background:#222"></span>robot path</span></div>
+    </div>
+
+    <div class="scene">
+      <h3>Tepper Hall <span class="tag">long-range</span></h3>
+      <div class="sub">Multi-storey glass atrium; extended 20&nbsp;m sensing range.</div>
+      <div class="scenegrid">
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/tepper_hall_360.jpg" src="videos/tepper_hall_360.mp4"></video></div>
+          <div class="cap"><b>GG-360</b></div></div>
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/tepper_hall_pinhole.jpg" src="videos/tepper_hall_pinhole.mp4"></video></div>
+          <div class="cap"><b>GG-pin</b></div></div>
+      </div>
+      <img class="qualstrip" src="assets/qual/v3_strip_tepper_hall.png" alt="top-down occupancy comparison">
+      <div class="qualnote">Top-down occupancy vs. ground truth</div>
+      <div class="legend"><span class="chip"><span class="sw" style="background:#26bf4d"></span>detected</span><span class="chip"><span class="sw" style="background:#9e3dd1"></span>missed</span><span class="chip"><span class="sw" style="background:#eb2828"></span>misplaced</span><span class="chip"><span class="sw" style="background:#222"></span>robot path</span></div>
+    </div>
+
+    <div class="scene">
+      <h3>Tepper Inside</h3>
+      <div class="sub">Interior glass partitions and meeting rooms.</div>
+      <div class="scenegrid">
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/tepper_inside_360.jpg" src="videos/tepper_inside_360.mp4"></video></div>
+          <div class="cap"><b>GG-360</b></div></div>
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/tepper_inside_pinhole.jpg" src="videos/tepper_inside_pinhole.mp4"></video></div>
+          <div class="cap"><b>GG-pin</b></div></div>
+      </div>
+      <img class="qualstrip" src="assets/qual/v3_strip_tepper_inside.png" alt="top-down occupancy comparison">
+      <div class="qualnote">Top-down occupancy vs. ground truth</div>
+      <div class="legend"><span class="chip"><span class="sw" style="background:#26bf4d"></span>detected</span><span class="chip"><span class="sw" style="background:#9e3dd1"></span>missed</span><span class="chip"><span class="sw" style="background:#eb2828"></span>misplaced</span><span class="chip"><span class="sw" style="background:#222"></span>robot path</span></div>
+    </div>
+
+    <div class="scene">
+      <h3>Tepper 2nd Floor</h3>
+      <div class="sub">Glass balustrades and office fronts.</div>
+      <div class="scenegrid">
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/tepper2nd_360.jpg" src="videos/tepper2nd_360.mp4"></video></div>
+          <div class="cap"><b>GG-360</b></div></div>
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/tepper2nd_pinhole.jpg" src="videos/tepper2nd_pinhole.mp4"></video></div>
+          <div class="cap"><b>GG-pin</b></div></div>
+      </div>
+      <img class="qualstrip" src="assets/qual/v3_strip_tepper_2nd.png" alt="top-down occupancy comparison">
+      <div class="qualnote">Top-down occupancy vs. ground truth</div>
+      <div class="legend"><span class="chip"><span class="sw" style="background:#26bf4d"></span>detected</span><span class="chip"><span class="sw" style="background:#9e3dd1"></span>missed</span><span class="chip"><span class="sw" style="background:#eb2828"></span>misplaced</span><span class="chip"><span class="sw" style="background:#222"></span>robot path</span></div>
+    </div>
+
+    <div class="scene">
+      <h3>Office</h3>
+      <div class="sub">Cluttered workspace with glass-walled meeting rooms.</div>
+      <div class="scenegrid">
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/office_360.jpg" src="videos/office_360.mp4"></video></div>
+          <div class="cap"><b>GG-360</b></div></div>
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/office_pinhole.jpg" src="videos/office_pinhole.mp4"></video></div>
+          <div class="cap"><b>GG-pin</b></div></div>
+      </div>
+      <img class="qualstrip" src="assets/qual/v3_strip_office1.png" alt="top-down occupancy comparison">
+      <div class="qualnote">Top-down occupancy vs. ground truth</div>
+      <div class="legend"><span class="chip"><span class="sw" style="background:#26bf4d"></span>detected</span><span class="chip"><span class="sw" style="background:#9e3dd1"></span>missed</span><span class="chip"><span class="sw" style="background:#eb2828"></span>misplaced</span><span class="chip"><span class="sw" style="background:#222"></span>robot path</span></div>
+    </div>
+
+    <div class="scene">
+      <h3>Gates Outside &mdash; Night <span class="tag">low light</span></h3>
+      <div class="sub">Outdoor facade glass at night: hardest visual conditions in the benchmark.</div>
+      <div class="scenegrid">
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/gates_night_360.jpg" src="videos/gates_night_360.mp4"></video></div>
+          <div class="cap"><b>GG-360</b></div></div>
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/gates_night_pinhole.jpg" src="videos/gates_night_pinhole.mp4"></video></div>
+          <div class="cap"><b>GG-pin</b></div></div>
+      </div>
+      <img class="qualstrip" src="assets/qual/v3_strip_gates_night.png" alt="top-down occupancy comparison">
+      <div class="qualnote">Top-down occupancy vs. ground truth</div>
+      <div class="legend"><span class="chip"><span class="sw" style="background:#26bf4d"></span>detected</span><span class="chip"><span class="sw" style="background:#9e3dd1"></span>missed</span><span class="chip"><span class="sw" style="background:#eb2828"></span>misplaced</span><span class="chip"><span class="sw" style="background:#222"></span>robot path</span></div>
+    </div>
+  </div>
+</section>
+
+<hr class="sep">
+
+<!-- ── BASELINES ── -->
+<section id="baselines">
+  <div class="wrap">
+    <h2><span class="emoji">⚖️</span>Baseline Comparison</h2>
+    <div class="h2bar"></div>
+    <p class="h2sub">The reconstruction baselines running live on the same robot and inputs (single
+    pinhole view + sparse LiDAR), shown on Gates 5th Floor and Tepper Hall.</p>
+    <div class="scene" style="margin-top:0">
+      <h3>Gates 5th Floor</h3>
+      <div class="scenegrid">
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/gates5_monoglass.jpg" src="videos/gates5_monoglass.mp4"></video></div>
+          <div class="cap"><b>MonoGlass3D</b> &mdash; learned monocular baseline</div></div>
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/gates5_glassrecon.jpg" src="videos/gates5_glassrecon.mp4"></video></div>
+          <div class="cap"><b>GlassRecon</b> &mdash; depth-prior reconstruction baseline</div></div>
+      </div>
+    </div>
+    <div class="scene">
+      <h3>Tepper Hall <span class="tag">largest spill contrast</span></h3>
+      <div class="scenegrid">
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/tepper_hall_monoglass.jpg" src="videos/tepper_hall_monoglass.mp4"></video></div>
+          <div class="cap"><b>MonoGlass3D</b></div></div>
+        <div class="vidcard"><div class="vframe"><video controls preload="none" poster="assets/posters/tepper_hall_glassrecon.jpg" src="videos/tepper_hall_glassrecon.mp4"></video></div>
+          <div class="cap"><b>GlassRecon</b></div></div>
+      </div>
+    </div>
+
+    <div class="man" style="margin-top:44px">
+      <h3 style="text-align:center">Why the baselines struggle</h3>
+      <div style="max-width:1150px;margin:0 auto;text-align:left">
+        <p><b>MonoGlass3D</b> attempts to solve a fundamentally metric problem with RGB alone. Its
+        training corpus covers few scenes, so depth regression at range degrades quickly &mdash; panes are
+        detected in the image but projected meters off the true surface, and every misprojection
+        becomes standing phantom occupancy because nothing ever deletes it. The robot carries a LiDAR
+        whose returns would anchor the scale directly, but the method never consumes them &mdash;
+        they use RGB to solve a LiDAR problem.</p>
+        <p><b>GlassRecon</b> never measures the pane: its glass surface is read directly from the
+        Depth-Anything prior's output inside the glass mask (sensor returns on glass are deliberately
+        discarded). This leans on a behavior that is a <em>training artifact rather than a model
+        ability</em> &mdash; the foundation model sometimes renders glass as a solid wall and sometimes
+        sees straight through it, depending on reflections and context. When the artifact cooperates,
+        the aligned depth looks plausible; when it does not, whole panes are reconstructed at
+        through-glass depth &mdash; a failure mode common to depth-prior pipelines on specular
+        surfaces. Its RANSAC scale-shift alignment also costs seconds of CPU per frame
+        (~0.2&nbsp;Hz &mdash; one input every ~5&nbsp;s in our runs), far below what a robot moving
+        through a building can act on.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="sep">
+
+<!-- ── USER MANUAL ── -->
+<section id="manual">
+  <div class="wrap">
+    <h2><span class="emoji">📖</span>User Manual</h2>
+    <div class="h2bar"></div>
+    <p class="h2sub">Quick reference for running GlassGuard: segmentation-backbone footprint and
+    the handful of parameters that actually matter.</p>
+    <div class="man">
+
+      <h3>Speed &amp; VRAM by segmentation body</h3>
+      <table class="mantable">
+        <thead><tr><th>SAM body</th><th>Resident VRAM</th><th>Mask quality (vs. teacher)</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>Slim-2816 · BF16</td><td>1674&nbsp;MB</td><td>0.966 mAP@50</td><td>default — evaluated configuration</td></tr>
+          <tr><td>Slim-2816 · INT8</td><td>1390&nbsp;MB</td><td>0.965 mAP@50</td><td>near-lossless, smaller GPUs</td></tr>
+          <tr><td>Slim-2816 · INT4</td><td>1190&nbsp;MB</td><td>0.958 mAP@50</td><td>tightest footprint</td></tr>
+          <tr><td>Slim-1752</td><td>&lt;1.4&nbsp;GB</td><td>0.717 IoU (vs. 0.748)</td><td>faster, small recall loss</td></tr>
+        </tbody>
+      </table>
+      <p style="text-align:center;color:var(--muted);font-size:1rem">Full system: ~1.5&nbsp;GB VRAM,
+      ~0.74&nbsp;s per frame end-to-end (detection + verification + global map) on the robot GPU;
+      the 2-process pipeline mode overlaps mapping with perception for higher throughput.</p>
+
+      <h3>The hyperparameters that matter</h3>
+      <table class="hp">
+        <thead><tr><th>Knob</th><th>Default</th><th>What it does / when to touch it</th></tr></thead>
+        <tbody>
+          <tr><td><code>RANGE_M</code></td><td>10</td><td>One knob for sensing range: LiDAR crop, plane placement and
+            spill radii, plane-fit ceiling. Raise (15&ndash;20) for atriums and outdoor facades.</td></tr>
+          <tr><td><code>CONF_TH</code></td><td>0.3</td><td>Segmentation confidence. Lower finds fainter glass but
+            leans harder on the geometric verification to reject the extras.</td></tr>
+          <tr><td><code>--pinhole-dir-trust-min-span-px</code></td><td>140</td><td>Angle-gate arming: minimum edge
+            span before the projective orientation check is trusted. Higher = gate arms less often
+            (falls back to the conservative dv/dh test).</td></tr>
+          <tr><td><code>spill_hard_frac</code></td><td>0.55</td><td>Off-mask fraction of a reprojected plane that
+            evicts it immediately; smaller rises above the plane&rsquo;s own tolerance are counted over several views. Lower = more aggressive self-correction.</td></tr>
+          <tr><td><code>min_cov</code></td><td>0.10</td><td>Minimum LiDAR seed coverage to place a plane at all —
+            the floor on how little structural evidence is acceptable.</td></tr>
+          <tr><td><code>GROUNDING_CELL</code></td><td>6&nbsp;px</td><td>Contact-seed grid resolution around the mask.
+            Finer = tighter pane footprints, slightly more compute.</td></tr>
+          <tr><td><code>PIPELINE</code></td><td>true</td><td>2-process split: background mapping + foreground perception (the evaluated configuration). Set <code>false</code> for a simpler single-process run.</td></tr>
+          <tr><td>provider <code>voxelSize</code></td><td>0.05&nbsp;m</td><td>LiDAR stack voxel. 0.02 sharpens contacts
+            but ~6&times; the CPU on large outdoor stacks.</td></tr>
+        </tbody>
+      </table>
+      <p style="text-align:center;color:var(--muted);font-size:1rem">Everything else ships frozen at the
+      evaluated configuration &mdash; see <code>TUNABLES.md</code> in the code release.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div style='font-size:1.6rem;margin-bottom:8px'>🥃</div>
+  Anonymous project page for double-blind review &middot; all identifying information withheld.
+</footer>
+
+</body>
+</html>
