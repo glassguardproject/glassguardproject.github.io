@@ -148,8 +148,6 @@
 <div class="hero">
   <div class="inner">
     <h1>GlassGuard: Verified Glass Plane Mapping for Robot Navigation</h1>
-    <div class="authors">Anonymous Author(s)</div>
-    <div class="venue">Under review &mdash; identities withheld</div>
     <div class="btnrow">
       <a class="btn dis" href="#">📄 Paper (soon)</a>
       <a class="btn" href="#expl-video">🎬 Video</a>
@@ -213,7 +211,11 @@
   <div class="wrap">
     <h2><span class="emoji">🎬</span>Explanation Video</h2>
     <div class="h2bar"></div>
-    <div class="placeholder">Narrated method &amp; results video — coming soon.</div>
+    <div class="vidcard" style="max-width:1250px;margin:0 auto">
+      <div class="vframe"><video controls preload="none"
+        src="https://huggingface.co/datasets/glassguard1/glassguard-videos/resolve/main/explanation_video.mp4"></video></div>
+      <div class="cap">Narrated walkthrough of the method and results.</div>
+    </div>
   </div>
 </section>
 
@@ -507,27 +509,6 @@
       </div>
     </div>
 
-    <div class="man" style="margin-top:44px">
-      <h3 style="text-align:center">Why the baselines struggle</h3>
-      <div style="max-width:1150px;margin:0 auto;text-align:left">
-        <p><b>MonoGlass3D</b> attempts to solve a fundamentally metric problem with RGB alone. Its
-        training corpus covers few scenes, so depth regression at range degrades quickly &mdash; panes are
-        detected in the image but projected meters off the true surface, and every misprojection
-        becomes standing phantom occupancy because nothing ever deletes it. The robot carries a LiDAR
-        whose returns would anchor the scale directly, but the method never consumes them &mdash;
-        they use RGB to solve a LiDAR problem.</p>
-        <p><b>GlassRecon</b> never measures the pane: its glass surface is read directly from the
-        Depth-Anything prior's output inside the glass mask (sensor returns on glass are deliberately
-        discarded). This leans on a behavior that is a <em>training artifact rather than a model
-        ability</em> &mdash; the foundation model sometimes renders glass as a solid wall and sometimes
-        sees straight through it, depending on reflections and context. When the artifact cooperates,
-        the aligned depth looks plausible; when it does not, whole panes are reconstructed at
-        through-glass depth &mdash; a failure mode common to depth-prior pipelines on specular
-        surfaces. Its RANSAC scale-shift alignment also costs seconds of CPU per frame
-        (~0.2&nbsp;Hz &mdash; one input every ~5&nbsp;s in our runs), far below what a robot moving
-        through a building can act on.</p>
-      </div>
-    </div>
   </div>
 </section>
 
