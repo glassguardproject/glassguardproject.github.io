@@ -82,6 +82,8 @@
   .vidcard .vframe{padding:8px;background:linear-gradient(145deg,#eef3f9,#dfe7f0)}
   .vidcard video{width:100%;display:block;background:#000;aspect-ratio:16/9;border-radius:8px;
                  border:1px solid rgba(15,35,60,.18)}
+  /* the explanation video is 1524x1080, not 16/9: let it keep its own shape */
+  .vidcard.expl video{aspect-ratio:auto}
   .vidcard .cap{padding:14px 20px;font-size:1.45rem;color:var(--muted);text-align:left}
   .vidcard .cap b{color:var(--ink)}
   .tag{display:inline-block;font-size:.9rem;padding:2px 12px;border-radius:12px;margin-left:8px;
@@ -211,8 +213,8 @@
   <div class="wrap">
     <h2><span class="emoji">🎬</span>Explanation Video</h2>
     <div class="h2bar"></div>
-    <div class="vidcard" style="max-width:1250px;margin:0 auto">
-      <div class="vframe"><video controls preload="none"
+    <div class="vidcard expl" style="max-width:1250px;margin:0 auto">
+      <div class="vframe"><video controls preload="none" poster="assets/posters/explanation_video.jpg"
         src="https://huggingface.co/datasets/glassguard1/glassguard-videos/resolve/main/explanation_video.mp4"></video></div>
       <div class="cap">Narrated walkthrough of the method and results.</div>
     </div>
